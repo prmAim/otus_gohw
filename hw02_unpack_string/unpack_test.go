@@ -2,7 +2,6 @@ package hw02unpackstring
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 
 	//nolint:depguard
@@ -22,6 +21,7 @@ func TestUnpack(t *testing.T) {
 		{input: `qwe\4\5`, expected: `qwe45`},
 		{input: `qwe\45`, expected: `qwe44444`},
 		{input: `qwe\\5`, expected: `qwe\\\\\`},
+		{input: `as\\\44`, expected: `as4444`},
 	}
 
 	for _, tc := range tests {
@@ -35,7 +35,7 @@ func TestUnpack(t *testing.T) {
 }
 
 func TestUnpackInvalidString(t *testing.T) {
-	invalidStrings := []string{"3abc", "45", "aaa10b"}
+	invalidStrings := []string{"3abc", "45", "aaa10b", `as\`, `\.`}
 	for _, tc := range invalidStrings {
 		tc := tc
 		t.Run(tc, func(t *testing.T) {
@@ -61,12 +61,14 @@ func TestOfNill(t *testing.T) {
 		{input: `qwe\4\5`, expectedErr: nil},
 		{input: `qwe\45`, expectedErr: nil},
 		{input: `qwe\\5`, expectedErr: nil},
+		{input: `as\\\44`, expectedErr: nil},
+		{input: `as\`, expectedErr: ErrInvalidString},
+		{input: `\.`, expectedErr: ErrInvalidString},
 	}
 	for _, tc := range testNils {
 		tc := tc
 		t.Run(tc.input, func(t *testing.T) {
 			_, err := Unpack(tc.input)
-			fmt.Printf("Error = %c , err = %c\n", tc.expectedErr, err)
 			if tc.expectedErr == nil {
 				require.Nil(t, err)
 			} else {

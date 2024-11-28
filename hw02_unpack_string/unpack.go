@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 var ErrInvalidString = errors.New("invalid string")
@@ -21,10 +22,15 @@ func Unpack(strIn string) (string, error) {
 		return "", ErrInvalidString
 	}
 
+	// Если последний символ заканчивается на `\`, то ошибка
+	if string(strIn[len(strIn)-1]) == `\` {
+		return "", ErrInvalidString
+	}
+
 	var bufferStr strings.Builder
 	var resultStr strings.Builder
 	lastRuneIsDigital := false
-	lastRuneIsLiteral := false
+	countRepeatLiteral := 0
 
 	for _, value := range strIn {
 		// проверка, является ли символ строки целым числом
@@ -32,6 +38,11 @@ func Unpack(strIn string) (string, error) {
 
 		// если цифра повторяется два раза подряд, то ошибка
 		if err == nil && lastRuneIsDigital {
+			return "", ErrInvalidString
+		}
+
+		// если экранируется не символ или число, то ошибка
+		if bufferStr.String() == "\\" && !unicode.IsLetter(value) && !unicode.IsDigit(value) && string(value) != "\\" {
 			return "", ErrInvalidString
 		}
 
@@ -45,9 +56,10 @@ func Unpack(strIn string) (string, error) {
 		// является ли символ числом, да то ..., иначе ...
 		if err == nil {
 			// проверка является ли это одинарным литералом
-			if bufferStr.String() == "\\" && !lastRuneIsLiteral {
+			if bufferStr.String() == "\\" && (countRepeatLiteral%2 == 0) {
 				bufferStr.Reset()
 				bufferStr.WriteRune(value)
+				lastRuneIsDigital = false // флаг, что предыдущий символ является число
 				continue
 			}
 
@@ -55,14 +67,14 @@ func Unpack(strIn string) (string, error) {
 			resultStr.WriteString(strings.Repeat(bufferStr.String(), num))
 			bufferStr.Reset()
 
-			lastRuneIsDigital = true  // флаг, что предыдущий символ является число
-			lastRuneIsLiteral = false // флаг, что предыдущий не равен `\`
+			lastRuneIsDigital = true // флаг, что предыдущий символ является число
+			countRepeatLiteral = 0
 		} else {
 			// обнуляем литерал, если он задвоился
 			if bufferStr.String() == "\\" {
 				bufferStr.Reset()
 				bufferStr.WriteRune(value)
-				lastRuneIsLiteral = true
+				countRepeatLiteral++ // кол-во повторений
 				continue
 			}
 
