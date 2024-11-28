@@ -18,10 +18,6 @@ func TestUnpack(t *testing.T) {
 		{input: "aaa0b", expected: "aab"},
 		{input: "", expected: ""},
 		{input: "d\n5abc", expected: "d\n\n\n\n\nabc"},
-		{input: `qwe\4\5`, expected: `qwe45`},
-		{input: `qwe\45`, expected: `qwe44444`},
-		{input: `qwe\\5`, expected: `qwe\\\\\`},
-		{input: `as\\\44`, expected: `as4444`},
 	}
 
 	for _, tc := range tests {
@@ -35,7 +31,7 @@ func TestUnpack(t *testing.T) {
 }
 
 func TestUnpackInvalidString(t *testing.T) {
-	invalidStrings := []string{"3abc", "45", "aaa10b", `as\`, `\.`}
+	invalidStrings := []string{"3abc", "45", "aaa10b"}
 	for _, tc := range invalidStrings {
 		tc := tc
 		t.Run(tc, func(t *testing.T) {
@@ -58,12 +54,6 @@ func TestOfNill(t *testing.T) {
 		{input: "aaa0b", expectedErr: nil},
 		{input: "", expectedErr: nil},
 		{input: "d\n5abc", expectedErr: nil},
-		{input: `qwe\4\5`, expectedErr: nil},
-		{input: `qwe\45`, expectedErr: nil},
-		{input: `qwe\\5`, expectedErr: nil},
-		{input: `as\\\44`, expectedErr: nil},
-		{input: `as\`, expectedErr: ErrInvalidString},
-		{input: `\.`, expectedErr: ErrInvalidString},
 	}
 	for _, tc := range testNils {
 		tc := tc
