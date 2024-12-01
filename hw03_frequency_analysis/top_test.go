@@ -3,6 +3,7 @@ package hw03frequencyanalysis
 import (
 	"testing"
 
+	//nolint:depguard
 	"github.com/stretchr/testify/require"
 )
 
@@ -79,4 +80,28 @@ func TestTop10(t *testing.T) {
 			require.Equal(t, expected, Top10(text))
 		}
 	})
+}
+
+func TestOfNil(t *testing.T) {
+	testNils := []struct {
+		input    string
+		expected []string
+	}{
+		{input: "", expected: nil},
+		{input: "which witch wished which wicked wish?", expected: []string{"which", "wicked", "wish?", "wished", "witch"}},
+		{input: "Willie’s really weary.", expected: []string{"Willie’s", "really", "weary."}},
+		{
+			input: "a big black bug bit a big black bear, made the big black bear bleed blood.",
+			expected: []string{
+				"big", "black", "a", "bear", "bear,", "bit", "bleed", "blood.", "bug", "made",
+			},
+		},
+	}
+	for _, tc := range testNils {
+		tc := tc
+		t.Run(tc.input, func(t *testing.T) {
+			val := Top10(tc.input)
+			require.Equal(t, tc.expected, val)
+		})
+	}
 }
