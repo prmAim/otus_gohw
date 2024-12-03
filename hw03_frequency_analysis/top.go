@@ -6,8 +6,8 @@ import (
 )
 
 type repeatText struct {
-	count int
 	text  string
+	count int
 }
 
 type ByCountAndText []repeatText
@@ -36,36 +36,41 @@ func Top10(strIn string) []string {
 		return nil
 	}
 
-	repWords := []repeatText{}
-
 	// разбиваем на массив слов, убирая лишние пробелы
 	txt := strings.Fields(strIn)
-	isPresentWord := false
+
+	repWords := make(map[string]int)
 
 	for _, valTxt := range txt {
-		isPresentWord = false
-
-		for idx, valRepWord := range repWords {
-			if valTxt == valRepWord.text {
-				repWords[idx].count++
-				isPresentWord = true
-				break
-			}
-		}
-
-		if !isPresentWord {
-			repWords = append(repWords, repeatText{count: 1, text: valTxt})
+		// Проверка существования ключа
+		if val, exists := repWords[valTxt]; exists {
+			repWords[valTxt] = val + 1
+		} else {
+			repWords[valTxt] = 1
 		}
 	}
 
 	// Сортировка
-	sort.Sort(ByCountAndText(repWords))
+	// Создание среза для хранения пар ключ-значение
+	sortedWords := make(ByCountAndText, 0, len(repWords))
+
+	// Заполнение среза парами ключ-значение
+	for k, v := range repWords {
+		sortedWords = append(sortedWords, repeatText{k, v})
+	}
+
+	// Сортировка среза
+	sort.Sort(sortedWords)
 
 	// копируем
-	repWords10 := []string{}
+	size := 10
+	if len(sortedWords) < 10 {
+		size = len(sortedWords)
+	}
+	repWords10 := make([]string, size)
 
-	for idx := 0; idx < 10 && idx < len(repWords); idx++ {
-		repWords10 = append(repWords10, repWords[idx].text)
+	for idx := 0; idx < len(sortedWords) && idx < 10; idx++ {
+		repWords10[idx] = sortedWords[idx].text
 	}
 
 	return repWords10
