@@ -42,12 +42,7 @@ func Top10(strIn string) []string {
 	repWords := make(map[string]int)
 
 	for _, valTxt := range txt {
-		// Проверка существования ключа
-		if val, exists := repWords[valTxt]; exists {
-			repWords[valTxt] = val + 1
-		} else {
-			repWords[valTxt] = 1
-		}
+		repWords[valTxt]++
 	}
 
 	// Сортировка
