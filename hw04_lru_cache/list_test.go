@@ -1,6 +1,7 @@
 package hw04lrucache
 
 import (
+	"github.com/bxcodec/faker/v3"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -48,4 +49,46 @@ func TestList(t *testing.T) {
 		}
 		require.Equal(t, []int{70, 80, 60, 40, 10, 30, 50}, elems)
 	})
+}
+
+// тест на производительность
+func BenchmarkList(b *testing.B) {
+	l := NewList()
+	for i := 0; i < b.N; i++ {
+		if i%2 == 0 {
+			l.PushFront(b.N + i)
+		} else {
+			l.PushBack(b.N + i)
+		}
+		if i%3 == 0 {
+			l.Remove(l.Front())
+		} else {
+			l.Remove(l.Back())
+		}
+	}
+}
+
+type StrFaker struct {
+	Name string `faker:"name"`
+}
+
+func NewStrFaker() StrFaker {
+	var strFaker StrFaker
+	faker.FakeData(&strFaker) // Генерация случайных данных для структуры
+	return strFaker
+}
+
+func TestListFaker(t *testing.T) {
+	l := NewList()
+
+	for i := 0; i < 10; i++ {
+		if i%2 == 0 {
+			l.PushFront(NewStrFaker())
+		} else {
+			l.PushBack(NewStrFaker())
+		}
+	}
+
+	require.Equal(t, 10, l.Len())
+	require.Equal(t, NewStrFaker(), l.Front().Value)
 }
