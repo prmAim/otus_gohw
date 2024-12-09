@@ -1,7 +1,5 @@
 package hw04lrucache
 
-import "fmt"
-
 type List interface {
 	Len() int
 	Front() *ListItem
@@ -10,7 +8,6 @@ type List interface {
 	PushBack(v interface{}) *ListItem
 	Remove(i *ListItem)
 	MoveToFront(i *ListItem)
-	StringAll(str string)
 }
 
 type ListItem struct {
@@ -30,27 +27,26 @@ func NewList() List {
 	return new(list)
 }
 
-// длина списка
-func (l *list) Len() int {
+// Len длина списка.
+func (l list) Len() int {
 	return l.size
 }
 
-// первый элемент списка
+// Front первый элемент списка.
 func (l *list) Front() *ListItem {
 	return l.theFirst
 }
 
-// последний элемент списка
+// Back последний элемент списка.
 func (l *list) Back() *ListItem {
 	return l.theEnd
 }
 
-// добавить значение в начало
+// PushFront добавить значение в начало.
 func (l *list) PushFront(v interface{}) *ListItem {
 	if l == nil {
 		return nil
 	}
-
 	newItem := &ListItem{Value: v}
 
 	// если l - пустой
@@ -68,11 +64,12 @@ func (l *list) PushFront(v interface{}) *ListItem {
 	return newItem
 }
 
-// добавить значение в конец
+// PushBack добавить значение в конец.
 func (l *list) PushBack(v interface{}) *ListItem {
 	if l == nil {
 		return nil
 	}
+
 	newItem := &ListItem{Value: v}
 
 	if l.size == 0 {
@@ -89,30 +86,34 @@ func (l *list) PushBack(v interface{}) *ListItem {
 	return newItem
 }
 
-// удалить элемент
+// Remove удалить элемент.
 func (l *list) Remove(i *ListItem) {
 	if i == nil {
 		return
 	}
 
-	// если это не первый элемент, то ..., иначе
-	if i.Prev != nil {
-		i.Prev.Next = i.Next
-	} else {
-		l.theFirst.Next = i.Next
+	// если это первый элемент, то ..., иначе
+	if i.Prev == nil {
+		i.Next.Prev = nil
+		l.theFirst = i.Next
 	}
 
-	// если это не последний элемент, то ..., иначе
-	if i.Next != nil {
+	// если это последний элемент, то ..., иначе
+	if i.Next == nil {
+		i.Prev.Next = nil
+		l.theEnd = i.Prev
+	}
+
+	// если это элемент в середине
+	if i.Prev != nil && i.Next != nil {
 		i.Next.Prev = i.Prev
-	} else {
-		l.theEnd.Prev = i.Prev
+		i.Prev.Next = i.Next
 	}
 
 	l.size--
 }
 
-// переместить элемент в начало
+// MoveToFront переместить элемент в начало.
 func (l *list) MoveToFront(i *ListItem) {
 	if i == nil {
 		return
@@ -125,15 +126,4 @@ func (l *list) MoveToFront(i *ListItem) {
 
 	l.Remove(i)
 	l.PushFront(i.Value)
-}
-
-func (l *list) StringAll(str string) {
-	if l == nil || l.size == 0 {
-		fmt.Println(str + ") = nil")
-		return
-	}
-
-	for step := l.theFirst; step != nil; step = step.Next {
-		fmt.Printf("%q) Element %+v \n", str, step.Value)
-	}
 }
