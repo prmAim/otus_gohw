@@ -3,6 +3,9 @@ package hw04lrucache
 import (
 	"testing"
 
+	//nolint:depguard
+	"github.com/bxcodec/faker/v3"
+	//nolint:depguard
 	"github.com/stretchr/testify/require"
 )
 
@@ -48,4 +51,75 @@ func TestList(t *testing.T) {
 		}
 		require.Equal(t, []int{70, 80, 60, 40, 10, 30, 50}, elems)
 	})
+
+	t.Run("TestOfMove", func(t *testing.T) {
+		l := NewList()
+
+		for _, v := range [...]string{"first", "second", "third", "fourth"} {
+			l.PushFront(v)
+		} // [fourth, third, second, first]
+
+		first := l.Back()
+		l.MoveToFront(first) // [first, fourth, third, second]
+		second := l.Back()
+		l.MoveToFront(second) // [second, first, fourth, third]
+		first2 := l.Front().Next
+		l.MoveToFront(first2) // [first, second, fourth, third]
+		third := l.Back()
+		l.MoveToFront(third) // [third, first, second, fourth]
+
+		elems := make([]string, 0, l.Len())
+		for i := l.Front(); i != nil; i = i.Next {
+			elems = append(elems, i.Value.(string))
+		}
+		require.Equal(t, []string{"third", "first", "second", "fourth"}, elems)
+	})
+}
+
+// тест на производительность.
+func BenchmarkList(b *testing.B) {
+	l := NewList()
+	for i := 0; i < b.N; i++ {
+		if i%2 == 0 {
+			l.PushFront(b.N + i)
+		} else {
+			l.PushBack(b.N + i)
+		}
+		if i%3 == 0 {
+			l.Remove(l.Front())
+		} else {
+			l.Remove(l.Back())
+		}
+	}
+}
+
+type testStruct struct {
+	Name string `faker:"name"`
+}
+
+func newStrFaker() testStruct {
+	var strFaker testStruct
+	faker.FakeData(&strFaker) // Генерация случайных данных для структуры
+	return strFaker
+}
+
+func TestListOfFaker(t *testing.T) {
+	maxCount := 5
+	l := NewList()
+
+	expected := make([]testStruct, maxCount)
+
+	for idx := 0; idx < maxCount; idx++ {
+		data := newStrFaker()
+		l.PushBack(data)
+		expected[idx] = data
+	}
+
+	elems := make([]testStruct, 0, l.Len())
+
+	for i := l.Front(); i != nil; i = i.Next {
+		elems = append(elems, i.Value.(testStruct))
+	}
+
+	require.Equal(t, expected, elems)
 }

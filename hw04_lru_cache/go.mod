@@ -1,8 +1,11 @@
-module github.com/fixme_my_friend/hw04_lru_cache
+module github.com/prmAim/otus_gohw/hw04_lru_cache
 
 go 1.22
 
-require github.com/stretchr/testify v1.7.0
+require (
+	github.com/bxcodec/faker/v3 v3.8.1
+	github.com/stretchr/testify v1.7.0
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
