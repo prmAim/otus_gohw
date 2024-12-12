@@ -92,22 +92,18 @@ func (l *list) Remove(i *ListItem) {
 		return
 	}
 
-	// если это первый элемент, то ..., иначе
-	if i.Prev == nil {
-		i.Next.Prev = nil
+	// если это не первый элемент, то ..., иначе
+	if i.Prev != nil {
+		i.Prev.Next = i.Next
+	} else {
 		l.theFirst = i.Next
 	}
 
-	// если это последний элемент, то ..., иначе
-	if i.Next == nil {
-		i.Prev.Next = nil
-		l.theEnd = i.Prev
-	}
-
-	// если это элемент в середине
-	if i.Prev != nil && i.Next != nil {
+	// если это не последний элемент, то ..., иначе
+	if i.Next != nil {
 		i.Next.Prev = i.Prev
-		i.Prev.Next = i.Next
+	} else {
+		l.theEnd = i.Prev
 	}
 
 	l.size--

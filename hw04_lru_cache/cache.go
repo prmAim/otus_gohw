@@ -22,6 +22,11 @@ func NewCache(capacity int) Cache {
 	}
 }
 
+type cacheItem struct {
+	key   Key
+	value interface{}
+}
+
 // Set Добавить значение в кэш по ключу.
 // Алгоритм работы кэша:
 // - при добавлении элемента:
@@ -37,28 +42,23 @@ func (cache *lruCache) Set(key Key, value interface{}) bool {
 
 	// если элемент в словаре (cache.items[key]) есть, то ..., иначе ...
 	if item, isOk := cache.items[key]; isOk {
-		item.Value = value
 		cache.queue.MoveToFront(item)
-		cache.items[key] = cache.queue.Front()
-		return isOk
+		item.Value.(*cacheItem).value = value
+		return true
 	}
 
 	// Если превысили кол-во элементов, чем размер очереди, то ...
 	if cache.capacity == cache.queue.Len() {
-		item := cache.queue.Back()
+		itemOld := cache.queue.Back()
 
-		for k, val := range cache.items {
-			if val == item {
-				delete(cache.items, k)
-				break
-			}
+		if itemOld != nil {
+			cache.queue.Remove(itemOld)
+			delete(cache.items, itemOld.Value.(*cacheItem).key)
 		}
-
-		cache.queue.Remove(item)
 	}
 
 	// Добавили новый элемент в начало
-	newItem := cache.queue.PushFront(value)
+	newItem := cache.queue.PushFront(&cacheItem{key: key, value: value})
 	cache.items[key] = newItem
 
 	return false
@@ -73,8 +73,7 @@ func (cache *lruCache) Get(key Key) (interface{}, bool) {
 	// если элемент в словаре (cache.items[key]) есть, то ..., иначе ...
 	if item, isOk := cache.items[key]; isOk {
 		cache.queue.MoveToFront(item)
-		cache.items[key] = cache.queue.Front()
-		return item.Value, isOk
+		return item.Value.(*cacheItem).value, true
 	}
 
 	return nil, false
