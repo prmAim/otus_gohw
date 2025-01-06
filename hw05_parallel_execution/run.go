@@ -2,8 +2,6 @@ package hw05parallelexecution
 
 import (
 	"errors"
-	"fmt"
-	"runtime"
 	"sync"
 )
 
@@ -30,27 +28,16 @@ func Run(tasks []Task, n, m int) error {
 
 	taskCh := make(chan Task)
 
-	fmt.Println("Кол-во каналов в начале:", runtime.NumGoroutine())
-
 	// Запуск n горутин
 	for i := 0; i < n; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 
-			// Получаем информацию о текущем вызове
-			pc, _, _, _ := runtime.Caller(1)
-			fn := runtime.FuncForPC(pc)
-			// Получаем ID горутины
-			gid := getGoroutineID()
-
 			for task := range taskCh {
-				fmt.Printf("%d) Горутина ID: %d, Функция: %s\n", i, gid, fn.Name())
-
 				if err := task(); err != nil {
 					mu.Lock()
 					errCount++
-					fmt.Printf("%d) Горутина ID: %d, Ошибка: %q, Кол-во ошибок: %d \n", i, gid, err, errCount)
 					mu.Unlock()
 				}
 			}
@@ -70,21 +57,10 @@ func Run(tasks []Task, n, m int) error {
 	close(taskCh)
 
 	wg.Wait()
-	fmt.Println("Кол-во каналов в конце:", runtime.NumGoroutine())
 
 	if errCount >= m {
 		return ErrErrorsLimitExceeded
 	}
 
 	return nil
-}
-
-func getGoroutineID() uint64 {
-	var buf [64]byte
-	n := runtime.Stack(buf[:], false)
-	// Строка будет выглядеть как "goroutine 1 [running]: ..."
-	// Извлекаем ID горутины из строки
-	var id uint64
-	fmt.Sscanf(string(buf[:n]), "goroutine %d", &id)
-	return id
 }
