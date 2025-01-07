@@ -3,7 +3,6 @@ module github.com/prmAim/otus_gohw/hw05_parallel_execution
 go 1.22
 
 require (
-	github.com/bxcodec/faker/v3 v3.8.1
 	github.com/stretchr/testify v1.7.0
 	go.uber.org/goleak v1.1.10
 )
