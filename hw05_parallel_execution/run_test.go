@@ -10,7 +10,7 @@ import (
 	"time"
 
 	//nolint:depguard
-	"github.com/go-faker/faker/v4"
+	"github.com/bxcodec/faker/v3"
 	//nolint:depguard
 	"github.com/stretchr/testify/require"
 	"go.uber.org/goleak"
