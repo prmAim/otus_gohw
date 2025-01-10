@@ -4,10 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	//nolint:depguard
+	"github.com/go-faker/faker/v4"
+	//nolint:depguard
 	"github.com/stretchr/testify/require"
 	"go.uber.org/goleak"
 )
@@ -67,4 +71,83 @@ func TestRun(t *testing.T) {
 		require.Equal(t, runTasksCount, int32(tasksCount), "not all tasks were completed")
 		require.LessOrEqual(t, int64(elapsedTime), int64(sumTime/2), "tasks were run sequentially?")
 	})
+}
+
+func TestOfError(t *testing.T) {
+	testsData := []struct {
+		inputTasksCount     int
+		inputWorkersCount   int
+		inputMaxErrorsCount int
+		expectedError       error
+	}{
+		{
+			inputTasksCount: 10, inputWorkersCount: 0, inputMaxErrorsCount: 2,
+			expectedError: errors.New("errors limit workers"),
+		},
+		{
+			inputTasksCount: 10, inputWorkersCount: 4, inputMaxErrorsCount: 0,
+			expectedError: errors.New("errors limit exceeded"),
+		},
+	}
+
+	for _, tc := range testsData {
+		tc := tc
+		t.Run(tc.expectedError.Error(), func(t *testing.T) {
+			tasks := make([]Task, 0, tc.inputTasksCount)
+
+			for i := 0; i < tc.inputTasksCount; i++ {
+				err := fmt.Errorf("error from task %d", i)
+				tasks = append(tasks, func() error {
+					return err
+				})
+			}
+
+			err := Run(tasks, tc.inputWorkersCount, tc.inputMaxErrorsCount)
+			require.Equal(t, tc.expectedError, err)
+		})
+	}
+}
+
+type TestStruct struct {
+	TasksCount     int `faker:"oneof:1, 2, 4, 8, 16"`
+	WorkersCount   int `faker:"oneof:1,2,3,4,5,6,7,8,9"`
+	MaxErrorsCount int `faker:"oneof:1,2,3,4,5,6,7,8,9"`
+}
+
+func generateDataOfTest() TestStruct {
+	var strFaker TestStruct
+	err := faker.FakeData(&strFaker)
+	if err != nil {
+		fmt.Println("Ошибка генерации данных:", err)
+	}
+	fmt.Printf("Сгенерированные данные: %+v\n", strFaker) // Вывод сгенерированных данны
+	return strFaker
+}
+
+func TestGenerateOfError(t *testing.T) {
+	defer goleak.VerifyNone(t)
+
+	for i := 0; i < 100; i++ {
+		t.Run("generate the tests data "+strconv.Itoa(i), func(t *testing.T) {
+			dataOftest := generateDataOfTest()
+			tasks := make([]Task, 0, dataOftest.TasksCount)
+
+			var runTasksCount int32
+
+			for i := 0; i < dataOftest.TasksCount; i++ {
+				err := fmt.Errorf("error from task %d", i)
+				tasks = append(tasks, func() error {
+					time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)))
+					atomic.AddInt32(&runTasksCount, 1)
+					return err
+				})
+			}
+
+			Run(tasks, dataOftest.WorkersCount, dataOftest.MaxErrorsCount)
+
+			require.LessOrEqual(
+				t, runTasksCount, int32(dataOftest.WorkersCount+dataOftest.MaxErrorsCount),
+				"extra tasks were started")
+		})
+	}
 }
