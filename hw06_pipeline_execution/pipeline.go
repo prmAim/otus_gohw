@@ -1,27 +1,36 @@
 package hw06pipelineexecution
 
 type (
-	In  = <-chan interface{} // Входной канал
-	Out = In                 // Выходной канал
-	Bi  = chan interface{}   // Двусторонний канал
+	In  = <-chan interface{}
+	Out = In
+	Bi  = chan interface{}
 )
 
-// Стейдж - функция, принимающая канал на чтение и отдающая канал на чтение, внутри в горутине берущая данные из входного канала, выполняющая полезную работу и отдающая результат в выходной канал:
 type Stage func(in In) (out Out)
 
 func ExecutePipeline(in In, done In, stages ...Stage) Out {
-	outStream := make(Bi) // Создаем выходной канал для результата
+	// Цикл проходит по каждому этапу в списке функций stages
+	for _, stage := range stages {
+		// Обернули в анонимная функция fn, которая принимает входной канал in.
+		// Вызывает текущий этап stage с входным каналом in и получает выходной канал out.
+		fn := func(in In) Out {
+			out := stage(in)
+			outStream := make(Bi)
 
-	go func() {
-		defer close(outStream)
+			go func() {
+				defer close(outStream)
 
-		for i := range in { // перебор всех входных данных (пока не закроется канал)
-			select {
-			case <-done: // канал на прекращение работы
-				return
-			case outStream <- i:
-			}
+				for v := range out {
+					select {
+					case outStream <- v: // чтение канал (результат текущий этап stage)
+					case <-done: // Сигнальный канал done используется для остановки пайплайна.
+					}
+				}
+			}()
+			return outStream
 		}
-	}()
-	return outStream
+
+		in = fn(in) // Это означает, что выходной канал текущего этапа становится входным каналом для следующего этапа.
+	}
+	return in
 }
