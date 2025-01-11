@@ -1,7 +1,6 @@
 package hw06pipelineexecution
 
 import (
-	"fmt"
 	"strconv"
 	"sync"
 	"testing"
@@ -38,7 +37,7 @@ func TestPipeline(t *testing.T) {
 		g("Dummy", func(v interface{}) interface{} { return v }),
 		g("Multiplier (* 2)", func(v interface{}) interface{} { return v.(int) * 2 }),
 		g("Adder (+ 100)", func(v interface{}) interface{} { return v.(int) + 100 }),
-		//g("Stringifier", func(v interface{}) interface{} { return strconv.Itoa(v.(int)) }),
+		g("Stringifier", func(v interface{}) interface{} { return strconv.Itoa(v.(int)) }),
 	}
 
 	t.Run("simple case", func(t *testing.T) {
@@ -47,7 +46,6 @@ func TestPipeline(t *testing.T) {
 
 		go func() {
 			for _, v := range data {
-				fmt.Printf("Тест данные: %v \n", v)
 				in <- v
 			}
 			close(in)
@@ -56,8 +54,7 @@ func TestPipeline(t *testing.T) {
 		result := make([]string, 0, 10)
 		start := time.Now()
 		for s := range ExecutePipeline(in, nil, stages...) {
-			fmt.Printf("тест данные результат: %v \n", s)
-			//result = append(result, s.(string))
+			result = append(result, s.(string))
 		}
 		elapsed := time.Since(start)
 
