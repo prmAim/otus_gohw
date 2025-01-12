@@ -23,7 +23,8 @@ func ExecutePipeline(in In, done In, stages ...Stage) Out {
 				for v := range out {
 					select {
 					case outStream <- v: // чтение канал (результат текущий этап stage)
-					case <-done: // Сигнальный канал done используется для остановки пайплайна.
+					case <-done:
+						return // Сигнальный канал done используется для остановки пайплайна.
 					}
 				}
 			}()
