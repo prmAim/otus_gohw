@@ -1,11 +1,16 @@
 package hw06pipelineexecution
 
 import (
+	"fmt"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	//nolint:depguard
+	"github.com/go-faker/faker/v4"
+	//nolint:depguard
 	"github.com/stretchr/testify/require"
 )
 
@@ -150,6 +155,76 @@ func TestAllStageStop(t *testing.T) {
 		wg.Wait()
 
 		require.Len(t, result, 0)
+	})
+}
 
+type TestStruct struct {
+	TestText string `faker:"word"`
+}
+
+func generateDataOfTest() TestStruct {
+	var strFaker TestStruct
+	err := faker.FakeData(&strFaker)
+	if err != nil {
+		fmt.Println("Ошибка генерации данных:", err)
+	}
+	return strFaker
+}
+
+func TestGenerateOfError(t *testing.T) {
+	// Stage generator
+	g := func(_ string, f func(v interface{}) interface{}) Stage {
+		return func(in In) Out {
+			out := make(Bi)
+			go func() {
+				defer close(out)
+				for v := range in {
+					time.Sleep(sleepPerStage)
+					out <- f(v)
+				}
+			}()
+			return out
+		}
+	}
+
+	stages := []Stage{
+		g("Trim", func(v interface{}) interface{} { return strings.Trim(v.(string), " ") }),
+		g("Join", func(v interface{}) interface{} { return strings.Join([]string{v.(string), "+"}, "") }),
+		g("Replace", func(v interface{}) interface{} { return strings.ReplaceAll(v.(string), "+", "-") }),
+	}
+
+	t.Run("generateTest", func(t *testing.T) {
+		in := make(Bi)
+		done := make(Bi)
+
+		dataOftest := generateDataOfTest()
+		data := make([]string, 0, len(dataOftest.TestText))
+		data = append(data, dataOftest.TestText)
+
+		strBuilder := strings.Builder{}
+		strBuilder.WriteString(dataOftest.TestText)
+		strBuilder.WriteString("-")
+
+		for i := 0; i < len(dataOftest.TestText); i++ {
+			text := generateDataOfTest().TestText
+			data = append(data, text)
+			strBuilder.WriteString(text)
+			strBuilder.WriteString("-")
+		}
+		expected := strBuilder.String()
+
+		go func() {
+			for _, v := range data {
+				in <- v
+			}
+			close(in)
+		}()
+
+		strBuilderRez := strings.Builder{}
+		for s := range ExecutePipeline(in, done, stages...) {
+			strBuilderRez.WriteString(s.(string))
+		}
+
+		require.Equal(t, expected, strBuilderRez.String())
 	})
 }
