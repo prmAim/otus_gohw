@@ -13,7 +13,8 @@ func ExecutePipeline(in In, done In, stages ...Stage) Out {
 
 	// Цикл проходит по каждому этапу в списке функций stages
 	for _, stage := range stages {
-		outStream = runStage(outStream, done, stage) // Это означает, что выходной канал текущего этапа становится входным каналом для следующего этапа.
+		// Это означает, что выходной канал текущего этапа становится входным каналом для следующего этапа.
+		outStream = runStage(outStream, done, stage)
 	}
 	return outStream
 }
@@ -48,7 +49,7 @@ func runStage(in In, done In, stage Stage) Out {
 	return out
 }
 
-// Создает новый канал, в который отправляется значение value
+// Создает новый канал, в который отправляется значение value.
 func valueToChannel(value interface{}, done <-chan interface{}) In {
 	channel := make(Bi)
 
